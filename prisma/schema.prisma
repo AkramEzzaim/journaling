@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Entry {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  mood      String?
+  favorite  Boolean  @default(false)
+  entryDate DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tags      Tag[]
+
+  @@index([entryDate])
+  @@index([favorite])
+}
+
+model Tag {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  entries Entry[]
+}
+
+model Trade {
+  id           Int      @id @default(autoincrement())
+  asset        String
+  direction    String
+  confidence   Int      @default(5)
+  tradeType    String
+  openedAt     DateTime
+  closedAt     DateTime?
+  entryPrice   Float?
+  exitPrice    Float?
+  stopLoss     Float?
+  takeProfit   Float?
+  forecastedRR Float?
+  result       String   @default("OPEN")
+  closingRR    Float?
+  pnl          Float?
+  setup        String?
+  notes        String   @default("")
+  favorite     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([openedAt])
+  @@index([result])
+  @@index([asset])
+}

@@ -1,0 +1,19 @@
+"use client";
+import { ArrowLeft, CalendarClock, Crosshair, Pencil, Star, Target, Trash2, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { dateTime, directionLabel, money, resultLabel, rr, TradeRecord, tradeTypeLabel } from "@/lib/trades";
+
+export function TradeView({ id }: { id: number }) {
+  const router = useRouter(); const [trade, setTrade] = useState<TradeRecord | null>(null); const [confirming, setConfirming] = useState(false);
+  useEffect(() => { fetch(`/api/trades/${id}`, { cache: "no-store" }).then((r) => r.json()).then(setTrade); }, [id]);
+  if (!trade) return <div className="page loading-state">Loading trade…</div>;
+  const remove = async () => { await fetch(`/api/trades/${id}`, { method: "DELETE" }); router.push("/trades"); router.refresh(); };
+  return <div className="page trade-view-page"><div className="trade-view-actions"><Link href="/trades" className="back-link"><ArrowLeft size={14} />All trades</Link><div><Link href={`/trades/${id}/edit`} className="button secondary"><Pencil size={14} />Edit</Link><button className="button danger" onClick={() => setConfirming(true)}><Trash2 size={14} />Delete</button></div></div>
+    <section className="trade-hero"><div><span className="eyebrow">{trade.setup || "Trade record"}</span><h1>{trade.asset}</h1><div className="trade-hero-tags"><span className={`trade-badge direction-${trade.direction.toLowerCase()}`}>{directionLabel(trade.direction)}</span><span className={`trade-badge result-${trade.result.toLowerCase()}`}>{resultLabel(trade.result)}</span><span className="trade-badge neutral">{tradeTypeLabel(trade.tradeType)}</span>{trade.favorite && <span className="trade-badge grade"><Star size={11} fill="currentColor" />A-grade</span>}</div></div><div className={`hero-pnl ${(trade.pnl ?? 0) > 0 ? "positive" : (trade.pnl ?? 0) < 0 ? "negative" : ""}`}><span>Net P&amp;L</span><strong>{money(trade.pnl)}</strong><small>{rr(trade.closingRR)} realized</small></div></section>
+    <div className="trade-detail-grid"><section className="detail-card"><div className="detail-card-head"><Crosshair size={15} /><span>Execution</span></div><dl><div><dt>Entry</dt><dd>{trade.entryPrice ?? "—"}</dd></div><div><dt>Exit</dt><dd>{trade.exitPrice ?? "—"}</dd></div><div><dt>Stop loss</dt><dd>{trade.stopLoss ?? "—"}</dd></div><div><dt>Take profit</dt><dd>{trade.takeProfit ?? "—"}</dd></div></dl></section><section className="detail-card"><div className="detail-card-head"><Target size={15} /><span>Risk &amp; conviction</span></div><dl><div><dt>Forecasted R:R</dt><dd>{trade.forecastedRR?.toFixed(2) ?? "—"}</dd></div><div><dt>Closing R</dt><dd>{rr(trade.closingRR)}</dd></div><div><dt>Confidence</dt><dd>{trade.confidence}/10</dd></div><div><dt>Direction</dt><dd>{directionLabel(trade.direction)}</dd></div></dl></section><section className="detail-card"><div className="detail-card-head"><CalendarClock size={15} /><span>Timing</span></div><dl className="one-column"><div><dt>Opened</dt><dd>{dateTime(trade.openedAt)}</dd></div><div><dt>Closed</dt><dd>{trade.closedAt ? dateTime(trade.closedAt) : "Position open"}</dd></div></dl></section></div>
+    <section className="trade-notes-card"><div><TrendingUp size={16} /><h2>Trade review</h2></div><p>{trade.notes || "No review notes yet. Edit this trade after it closes to record the lesson."}</p></section>
+    {confirming && <div className="dialog-backdrop"><div className="dialog"><h2>Delete {trade.asset}?</h2><p>This permanently removes the trade from your local journal.</p><div><button className="button secondary" onClick={() => setConfirming(false)}>Cancel</button><button className="button danger solid" onClick={remove}>Delete trade</button></div></div></div>}
+  </div>;
+}
